@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Etiquetas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    --bg: #F1ECE1;
+    --bg-soft: #E8E1D2;
+    --paper: #FFFFFF;
+    --ink: #232019;
+    --ink-soft: #6B6558;
+    --line: #DDD5C2;
+    --stamp: #C1432A;
+    --stamp-ink: #FFF7EF;
+    --good: #2F7A4D;
+    --good-bg: #E4F0E6;
+    --warn: #B4791E;
+    --warn-bg: #F5E9D4;
+    --shopee: #EE4D2D;
+    --tiktok: #111111;
+    --ml: #FFCF3F;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  :root[data-theme="dark"]{
+    --bg: #16181C;
+    --bg-soft: #1D2025;
+    --paper: #20232A;
+    --ink: #ECE7DD;
+    --ink-soft: #96907F;
+    --line: #33363D;
+    --stamp: #E15A3D;
+    --stamp-ink: #1A0D08;
+    --good: #62C98A;
+    --good-bg: #1D2E22;
+    --warn: #E3AE5C;
+    --warn-bg: #2E2717;
+    --ml: #FFCF3F;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg: #16181C;
+      --bg-soft: #1D2025;
+      --paper: #20232A;
+      --ink: #ECE7DD;
+      --ink-soft: #96907F;
+      --line: #33363D;
+      --stamp: #E15A3D;
+      --stamp-ink: #1A0D08;
+      --good: #62C98A;
+      --good-bg: #1D2E22;
+      --warn: #E3AE5C;
+      --warn-bg: #2E2717;
+    }
+  }
+  body{ background: var(--bg); color: var(--ink); }
+  .mono{ font-family: 'IBM Plex Mono', monospace; }
+  .paper{ background: var(--paper); border: 1px solid var(--line); }
+
+  /* Hero label card: shipping-label look, perforated top edge */
+  .label-card{
+    background: var(--paper);
+    border: 1px solid var(--line);
+    position: relative;
+    transform: rotate(-0.6deg);
+  }
+  .label-card::before{
+    content:"";
+    position:absolute; top:-1px; left:0; right:0; height:0;
+    border-top: 2px dashed var(--line);
+  }
+  .label-card::after{
+    content:"";
+    position:absolute; left:-9px; top:50%; transform:translateY(-50%);
+    width:18px; height:18px; border-radius:50%;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    box-shadow: none;
+  }
+
+  .stamp-btn{
+    background: var(--stamp);
+    color: var(--stamp-ink);
+    font-weight:700;
+    letter-spacing: 0.02em;
+    transition: transform .12s ease, box-shadow .12s ease;
+    box-shadow: 0 3px 0 0 color-mix(in srgb, var(--stamp) 60%, black 20%);
+  }
+  .stamp-btn:active{ transform: translateY(3px); box-shadow: none; }
+  .stamp-btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  .stamp-hit{ animation: hit .28s ease; }
+  @keyframes hit{
+    0%{ transform: scale(1); }
+    35%{ transform: scale(.96) rotate(-1deg); }
+    100%{ transform: scale(1); }
+  }
+
+  .platform-bar{ width:4px; border-radius:2px; }
+  .switch{ width:42px; height:24px; border-radius:999px; background: var(--line); position:relative; transition:.15s; cursor:pointer; flex-shrink:0; }
+  .switch[data-on="true"]{ background: var(--good); }
+  .switch .knob{ position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:var(--paper); transition:.15s; }
+  .switch[data-on="true"] .knob{ left:21px; }
+
+  .toast{
+    position:fixed; left:50%; bottom:28px; transform: translate(-50%, 20px);
+    background: var(--ink); color: var(--bg);
+    opacity:0; pointer-events:none; transition: .2s ease;
+  }
+  .toast.show{ opacity:1; transform: translate(-50%, 0); pointer-events:auto; }
+
+  table.manifest td, table.manifest th{ border-bottom: 1px solid var(--line); }
+  ::selection{ background: var(--stamp); color: var(--stamp-ink); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<div class="max-w-6xl mx-auto px-5 py-6 md:py-10">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between mb-8 md:mb-12">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-sm flex items-center justify-center mono text-sm font-semibold" style="background:var(--ink); color:var(--bg);">Et</div>
+      <div>
+        <div class="font-semibold leading-none">Etiqueta<span style="color:var(--stamp)">Flow</span></div>
+        <div class="text-xs mono" style="color:var(--ink-soft)">painel de expedição</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="text-right hidden sm:block">
+        <div id="clock" class="mono text-sm">--:--:--</div>
+        <div id="today" class="text-xs" style="color:var(--ink-soft)"></div>
+      </div>
+      <button id="theme-toggle" class="w-9 h-9 rounded-sm paper flex items-center justify-center text-sm" title="Alternar tema">◐</button>
+    </div>
+  </header>
+
+  <!-- Hero: Print label card -->
+  <section class="mb-10 md:mb-14 flex justify-center">
+    <div class="label-card w-full max-w-xl px-8 py-9 md:px-12 md:py-11 text-center">
+      <div class="text-xs mono uppercase tracking-wide mb-2" style="color:var(--ink-soft)">fila de expedição</div>
+      <div class="mono font-semibold" style="font-size: clamp(2.5rem, 8vw, 3.75rem); line-height:1;">
+        <span id="pending-count">42</span>
+      </div>
+      <div class="mb-7" style="color:var(--ink-soft)">etiquetas prontas para envio</div>
+
+      <button id="print-btn" class="stamp-btn w-full py-4 rounded-sm text-lg" onclick="handlePrint()">
+        IMPRIMIR <span id="btn-count">42</span> ETIQUETAS
+      </button>
+
+      <div class="flex items-center justify-center gap-4 mt-5 text-xs mono" style="color:var(--ink-soft)">
+        <span>Shopee <b id="mini-shopee">18</b></span>
+        <span>·</span>
+        <span>TikTok Shop <b id="mini-tiktok">9</b></span>
+        <span>·</span>
+        <span>Mercado Livre <b id="mini-ml">15</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Platform status cards -->
+  <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 md:mb-14">
+
+    <div class="paper rounded-sm p-4 flex gap-3">
+      <div class="platform-bar" style="background:var(--shopee)"></div>
+      <div class="flex-1">
+        <div class="flex items-center justify-between">
+          <span class="font-medium">Shopee</span>
+          <span class="text-xs px-2 py-0.5 rounded-sm" style="background:var(--good-bg); color:var(--good)">conectado</span>
+        </div>
+        <div class="mono font-semibold text-2xl mt-2">18</div>
+        <div class="text-xs" style="color:var(--ink-soft)">etiquetas pendentes · sync há 4 min</div>
+      </div>
+    </div>
+
+    <div class="paper rounded-sm p-4 flex gap-3">
+      <div class="platform-bar" style="background:var(--tiktok)"></div>
+      <div class="flex-1">
+        <div class="flex items-center justify-between">
+          <span class="font-medium">TikTok Shop</span>
+          <span class="text-xs px-2 py-0.5 rounded-sm" style="background:var(--good-bg); color:var(--good)">conectado</span>
+        </div>
+        <div class="mono font-semibold text-2xl mt-2">9</div>
+        <div class="text-xs" style="color:var(--ink-soft)">etiquetas pendentes · sync há 4 min</div>
+      </div>
+    </div>
+
+    <div class="paper rounded-sm p-4 flex gap-3">
+      <div class="platform-bar" style="background:var(--ml)"></div>
+      <div class="flex-1">
+        <div class="flex items-center justify-between">
+          <span class="font-medium">Mercado Livre</span>
+          <span class="text-xs px-2 py-0.5 rounded-sm" style="background:var(--good-bg); color:var(--good)">conectado</span>
+        </div>
+        <div class="mono font-semibold text-2xl mt-2">15</div>
+        <div class="text-xs" style="color:var(--ink-soft)">etiquetas pendentes · sync há 4 min</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Scheduler + History -->
+  <section class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+
+    <div class="paper rounded-sm p-5 lg:col-span-2">
+      <div class="flex items-center justify-between mb-4">
+        <span class="font-medium">Impressão automática</span>
+        <div id="auto-switch" class="switch" data-on="true" onclick="toggleAuto(this)"><div class="knob"></div></div>
+      </div>
+      <div id="auto-fields" class="space-y-3">
+        <div>
+          <label class="text-xs block mb-1" style="color:var(--ink-soft)">Dia da semana</label>
+          <select id="auto-day" class="w-full paper rounded-sm px-3 py-2 text-sm">
+            <option>Todos os dias</option>
+            <option selected>Segunda-feira</option>
+            <option>Terça-feira</option>
+            <option>Quarta-feira</option>
+            <option>Quinta-feira</option>
+            <option>Sexta-feira</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs block mb-1" style="color:var(--ink-soft)">Horário</label>
+          <input id="auto-time" type="time" value="07:00" class="w-full paper rounded-sm px-3 py-2 text-sm mono">
+        </div>
+        <div class="text-xs pt-1 mono" style="color:var(--ink-soft)">
+          próxima busca: <span id="next-run" style="color:var(--ink)">seg, 07:00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="paper rounded-sm p-5 lg:col-span-3">
+      <div class="font-medium mb-4">Histórico de impressões</div>
+      <div class="overflow-x-auto">
+        <table class="manifest w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs" style="color:var(--ink-soft)">
+              <th class="pb-2 pr-3 font-normal">Data</th>
+              <th class="pb-2 pr-3 font-normal">Horário</th>
+              <th class="pb-2 pr-3 font-normal">Qtd.</th>
+              <th class="pb-2 font-normal">Status</th>
+            </tr>
+          </thead>
+          <tbody id="history-body">
+            <tr>
+              <td class="py-2 pr-3 mono">14/09</td>
+              <td class="py-2 pr-3 mono">07:00</td>
+              <td class="py-2 pr-3 mono">37</td>
+              <td class="py-2"><span class="text-xs px-2 py-0.5 rounded-sm" style="background:var(--good-bg); color:var(--good)">concluído</span></td>
+            </tr>
+            <tr>
+              <td class="py-2 pr-3 mono">07/09</td>
+              <td class="py-2 pr-3 mono">07:00</td>
+              <td class="py-2 pr-3 mono">29</td>
+              <td class="py-2"><span class="text-xs px-2 py-0.5 rounded-sm" style="background:var(--good-bg); color:var(--good)">concluído</span></td>
+            </tr>
+            <tr>
+              <td class="py-2 pr-3 mono">31/08</td>
+              <td class="py-2 pr-3 mono">07:02</td>
+              <td class="py-2 pr-3 mono">44</td>
+              <td class="py-2"><span class="text-xs px-2 py-0.5 rounded-sm" style="background:var(--warn-bg); color:var(--warn)">2 falhas</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+  <p class="text-center text-xs mono mt-10" style="color:var(--ink-soft)">
+    protótipo de interface · dados fictícios
+  </p>
+</div>
+
+<div id="toast" class="toast px-5 py-3 rounded-sm text-sm mono"></div>
+
+<script>
+  // Clock
+  function tick(){
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString('pt-BR');
+    document.getElementById('today').textContent = now.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'short' });
+  }
+  tick(); setInterval(tick, 1000);
+
+  // Theme toggle (cycles light -> dark -> system)
+  const root = document.documentElement;
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    const cur = root.getAttribute('data-theme');
+    if(!cur){ root.setAttribute('data-theme','dark'); }
+    else if(cur==='dark'){ root.setAttribute('data-theme','light'); }
+    else{ root.removeAttribute('data-theme'); }
+  });
+
+  // Scheduler toggle
+  function toggleAuto(el){
+    const on = el.getAttribute('data-on') === 'true';
+    el.setAttribute('data-on', String(!on));
+    document.getElementById('auto-fields').style.opacity = on ? '.4' : '1';
+    document.getElementById('auto-fields').style.pointerEvents = on ? 'none' : 'auto';
+  }
+
+  // Print flow (mocked)
+  let pending = 42;
+  const perPlatform = { shopee: 18, tiktok: 9, ml: 15 };
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=> t.classList.remove('show'), 3200);
+  }
+
+  function handlePrint(){
+    const btn = document.getElementById('print-btn');
+    if(pending === 0){ showToast('Nenhuma etiqueta pendente no momento.'); return; }
+
+    const qty = pending;
+    btn.disabled = true;
+    btn.classList.add('stamp-hit');
+    btn.textContent = 'ENVIANDO PARA IMPRESSORA…';
+
+    // Simulates: fetch queued labels -> merge PDF / send ZPL to local print agent
+    setTimeout(() => {
+      pending = 0;
+      perPlatform.shopee = 0; perPlatform.tiktok = 0; perPlatform.ml = 0;
+      updateCounts();
+      addHistoryRow(qty);
+      btn.disabled = false;
+      btn.classList.remove('stamp-hit');
+      btn.textContent = 'IMPRIMIR 0 ETIQUETAS';
+      showToast(qty + ' etiquetas enviadas para a impressora com sucesso.');
+    }, 1100);
+  }
+
+  function updateCounts(){
+    document.getElementById('pending-count').textContent = pending;
+    document.getElementById('btn-count').textContent = pending;
+    document.getElementById('mini-shopee').textContent = perPlatform.shopee;
+    document.getElementById('mini-tiktok').textContent = perPlatform.tiktok;
+    document.getElementById('mini-ml').textContent = perPlatform.ml;
+    document.getElementById('print-btn').innerHTML = 'IMPRIMIR ' + pending + ' ETIQUETAS';
+  }
+
+  function addHistoryRow(qty){
+    const now = new Date();
+    const date = now.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+    const time = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td class="py-2 pr-3 mono">${date}</td>
+      <td class="py-2 pr-3 mono">${time}</td>
+      <td class="py-2 pr-3 mono">${qty}</td>
+      <td class="py-2"><span class="text-xs px-2 py-0.5 rounded-sm" style="background:var(--good-bg); color:var(--good)">concluído</span></td>`;
+    const body = document.getElementById('history-body');
+    body.insertBefore(row, body.firstChild);
+  }
+</script>
+</body>
+</html>
