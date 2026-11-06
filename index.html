@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EtiquetaFlow</title>
+  <meta name="description" content="Automação de impressão de etiquetas para Mercado Livre, Shopee e TikTok Shop." />
+  <meta name="theme-color" content="#F3F4F1" />
+  <script>document.documentElement.classList.add('js');</script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script src="js/tailwind.config.js"></script>
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body class="font-sans font-light">
+  <header class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-8 gap-y-2 px-5 pt-6 sm:px-8">
+    <a href="#" class="rise text-2xl font-normal tracking-tight">EtiquetaFlow</a>
+    <ul id="apiStatus" class="rise flex flex-wrap gap-x-5 gap-y-1 font-type text-[13px]" style="animation-delay:.35s" aria-label="Conexões com marketplaces"></ul>
+  </header>
+
+  <main>
+    <!-- Ação principal -->
+    <section class="mx-auto grid max-w-7xl grid-cols-1 items-start gap-x-10 gap-y-14 px-5 pb-20 pt-14 sm:px-8 md:grid-cols-[1fr_minmax(0,330px)] md:pb-28 lg:grid-cols-[1fr_minmax(0,380px)] lg:gap-x-20">
+      <div id="heroCopy" class="min-w-0 md:pt-10">
+        <h1 id="heroTitle">
+          <span id="heroCount" class="hero-num rise" style="animation-delay:.25s">42</span>
+          <span id="heroNoun" class="rise mt-6 block text-3xl sm:text-4xl" style="animation-delay:.5s">etiquetas pendentes</span>
+        </h1>
+
+        <div class="rise mt-12 max-w-md" style="animation-delay:.7s">
+          <button id="printBtn" type="button" class="btn-ink flex min-h-[68px] w-full items-center justify-between gap-4 px-7 text-xl font-normal">
+            <span id="printLabel">Imprimir 42 etiquetas</span>
+            <svg width="26" height="14" viewBox="0 0 26 14" fill="none" stroke="currentColor" aria-hidden="true"><path d="M0 7h24M18 1l6 6-6 6" /></svg>
+          </button>
+
+          <div class="mt-6 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 font-type text-sm">
+            <fieldset class="flex gap-5">
+              <legend class="sr-only">Formato de saída</legend>
+              <label class="segment relative"><input type="radio" name="output" value="pdf" /><span>PDF único</span></label>
+              <label class="segment relative"><input type="radio" name="output" value="spooler" /><span>Spooler térmico</span></label>
+            </fieldset>
+            <p class="text-ash">Zebra ZD220</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="heroObject" class="mx-auto w-full max-w-[300px] md:max-w-none" aria-hidden="true">
+        <div class="slot"></div>
+        <div class="hero-paper">
+          <div class="hero-feed label-shadow"><div id="heroLabel" class="label"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Integrações -->
+    <section aria-labelledby="channelsHeading" class="mx-auto max-w-7xl px-5 pb-28 sm:px-8 md:pb-36">
+      <div class="reveal flex items-end justify-between gap-6 pb-5">
+        <h2 id="channelsHeading" class="text-3xl sm:text-4xl">Integrações</h2>
+        <button id="syncBtn" type="button" class="link-line flex items-center gap-2 font-type text-sm">
+          <svg id="syncIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L3 9m0-5v5h5" /><path d="M4 13a8 8 0 0 0 14.3 4.9L21 15m0 5v-5h-5" /></svg>
+          Sincronizar pedidos
+        </button>
+      </div>
+      <div class="rule reveal"></div>
+      <div id="channels" class="reveal"></div>
+    </section>
+
+    <!-- Agendamento -->
+    <section id="scheduleZone" aria-labelledby="scheduleHeading">
+      <div id="vault" class="vault">
+        <div class="vault-texture" aria-hidden="true"></div>
+        <div class="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-5 py-20 sm:px-8 md:grid-cols-2 md:py-32 lg:gap-24">
+
+          <div class="relative mx-auto w-full max-w-[440px]">
+            <svg viewBox="0 0 400 400" class="block h-auto w-full" fill="none" aria-hidden="true">
+              <polygon points="200,3 284,3 397,116 397,284 284,397 116,397 3,284 3,116 116,3" stroke="#F3F4F1" stroke-opacity=".32" />
+              <polygon points="200,16 278,16 384,122 384,278 278,384 122,384 16,278 16,122 122,16" fill="#0B251A" fill-opacity=".86" stroke="#F3F4F1" stroke-opacity=".12" />
+              <polygon id="sweep" class="octagon-sweep" points="200,3 284,3 397,116 397,284 284,397 116,397 3,284 3,116 116,3" pathLength="60" stroke="#C5A059" stroke-width="2" />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center px-[14%] text-center">
+              <p class="font-type text-sm text-mist">Próxima impressão em</p>
+              <p id="cdDays" class="mt-4 text-2xl"></p>
+              <p id="cdClock" class="text-[clamp(2.8rem,10vw,4.6rem)] font-extralight leading-tight tracking-tight tabular-nums"></p>
+              <p id="nextRun" class="mt-3 font-type text-sm leading-snug text-mist"></p>
+            </div>
+          </div>
+
+          <div class="min-w-0">
+            <div class="flex items-center justify-between gap-6">
+              <h2 id="scheduleHeading" class="text-3xl sm:text-4xl">Agendamento</h2>
+              <button id="scheduleSwitch" class="toggle" type="button" role="switch" aria-checked="true" aria-label="Automação de impressão"><i></i></button>
+            </div>
+            <p id="scheduleSummary" class="mt-3 text-xl"></p>
+
+            <div id="scheduleControls" class="mt-10">
+              <fieldset>
+                <legend class="mb-3 font-type text-sm text-mist">Dias</legend>
+                <div id="days" class="grid grid-cols-7 gap-1"></div>
+              </fieldset>
+              <div class="mt-8 flex items-center justify-between gap-4">
+                <label for="scheduleTime" class="font-type text-sm text-mist">Horário</label>
+                <input id="scheduleTime" type="time" class="w-36 text-right" />
+              </div>
+            </div>
+
+            <p class="mt-10 font-type text-xs leading-relaxed text-mist">Nesta demonstração, o agendamento só dispara com esta aba aberta.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Histórico -->
+    <section aria-labelledby="historyHeading" class="mx-auto max-w-7xl px-5 py-28 sm:px-8 md:py-36">
+      <h2 id="historyHeading" class="reveal pb-5 text-3xl sm:text-4xl">Histórico recente</h2>
+      <div class="rule reveal"></div>
+      <div class="reveal overflow-x-auto">
+        <table class="ledger w-full min-w-[580px] text-left font-type text-sm">
+          <thead class="text-ash">
+            <tr>
+              <th scope="col" class="py-3 pr-4 font-normal">Data e hora</th>
+              <th scope="col" class="py-3 pr-4 font-normal">Canal</th>
+              <th scope="col" class="py-3 pr-8 text-right font-normal">Qtd.</th>
+              <th scope="col" class="py-3 font-normal">Status</th>
+            </tr>
+          </thead>
+          <tbody id="historyRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="mx-auto flex max-w-7xl flex-col gap-2 px-5 pb-8 font-type text-xs text-ash sm:flex-row sm:items-center sm:justify-between sm:px-8">
+    <p>Demonstração com dados simulados. Nenhuma API ou impressora real é acessada.</p>
+    <button id="resetBtn" type="button" class="link-line self-start text-ink sm:self-auto">Restaurar dados de demonstração</button>
+  </footer>
+
+  <!-- Impressão em tela cheia -->
+  <dialog id="printDialog" aria-labelledby="dialogTitle">
+    <div class="mx-auto grid min-h-full max-w-5xl grid-cols-1 content-center items-center gap-x-20 gap-y-10 px-5 py-10 sm:px-8 md:grid-cols-[minmax(0,320px)_1fr]">
+      <div class="mx-auto w-full max-w-[210px] md:max-w-none" aria-hidden="true">
+        <div class="slot"></div>
+        <div class="feed-window">
+          <div id="feedPaper" class="feed-paper">
+            <div class="label-shadow"><div id="feedLabel" class="label"></div></div>
+            <svg id="seal" class="seal" viewBox="0 0 120 120" data-on="false">
+              <defs>
+                <linearGradient id="sealGold" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#EEDDB3" />
+                  <stop offset=".5" stop-color="#C5A059" />
+                  <stop offset="1" stop-color="#94723A" />
+                </linearGradient>
+              </defs>
+              <polygon points="36,2 84,2 118,36 118,84 84,118 36,118 2,84 2,36" fill="url(#sealGold)" />
+              <polygon points="39,10 81,10 110,39 110,81 81,110 39,110 10,81 10,39" fill="none" stroke="#0B251A" stroke-opacity=".5" />
+              <path d="M38 61l15 15 30-33" fill="none" stroke="#0B251A" stroke-width="5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="min-w-0">
+        <div id="runView">
+          <h2 id="dialogTitle" class="text-3xl sm:text-4xl">Imprimindo 42 etiquetas</h2>
+          <ol class="mt-8 space-y-5">
+            <li data-stage="1" data-state="pending" class="stage flex gap-4">
+              <span class="stage-mark" aria-hidden="true"></span>
+              <div class="min-w-0"><p class="text-xl font-normal">Conectando às APIs</p><p data-detail class="min-h-[1.3rem] font-type text-sm"></p></div>
+            </li>
+            <li data-stage="2" data-state="pending" class="stage flex gap-4">
+              <span class="stage-mark" aria-hidden="true"></span>
+              <div class="min-w-0"><p class="text-xl font-normal">Consolidando etiquetas</p><p data-detail class="min-h-[1.3rem] break-words font-type text-sm"></p></div>
+            </li>
+            <li data-stage="3" data-state="pending" class="stage flex gap-4">
+              <span class="stage-mark" aria-hidden="true"></span>
+              <div class="min-w-0"><p class="text-xl font-normal">Enviando para a impressora</p><p data-detail class="min-h-[1.3rem] break-words font-type text-sm"></p></div>
+            </li>
+          </ol>
+          <div id="progress" class="mt-9 bg-ink/15" role="progressbar" aria-label="Progresso da impressão" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="meter" class="meter"></div></div>
+          <button id="cancelBtn" type="button" class="link-line mt-6 font-type text-sm">Cancelar impressão</button>
+        </div>
+
+        <div id="doneView" class="hidden">
+          <h2 id="doneTitle" class="text-4xl sm:text-5xl"></h2>
+          <p id="doneDetail" class="mt-4 max-w-sm font-type text-sm leading-relaxed text-ash"></p>
+          <button id="doneBtn" type="button" class="btn-ink mt-8 min-h-[60px] w-full max-w-xs px-7 text-lg font-normal">Concluir</button>
+        </div>
+        <p id="dialogLive" class="sr-only" aria-live="polite"></p>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" data-visible="false" role="status" aria-live="polite" class="fixed bottom-5 left-5 right-5 z-40 mx-auto max-w-md bg-ink px-5 py-4 font-type text-sm text-plaster sm:left-auto sm:right-8 sm:mx-0"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
